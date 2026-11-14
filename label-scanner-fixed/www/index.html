@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' https://world.openfoodfacts.org">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Label Scanner</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#0B7A4B"/><path d="M20 12h-4a4 4 0 0 0-4 4v4M44 12h4a4 4 0 0 1 4 4v4M20 52h-4a4 4 0 0 1-4-4v-4M44 52h4a4 4 0 0 0 4-4v-4" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><path d="M32 46c-9 0-14-6-14-14 0-8 6-13 16-14 3 0 5 .3 8 1-1 3-1 5-1 8 0 9-5 19-9 19z" fill="#2FD27F"/><path d="M26 42c4-7 8-11 14-15" fill="none" stroke="#0B7A4B" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+</defs></svg>
+
+<div id="splash" aria-hidden="true">
+  <svg class="splash-logo" width="96" height="96"><use href="#i-logo"/></svg>
+  <div class="splash-name">Label Scanner</div>
+  <div class="splash-tag">Know what's in your food</div>
+  <div class="splash-bar"><i></i></div>
+</div>
+
+<section id="profileView" class="onb" hidden>
+  <aside class="onb-hero">
+    <div class="brand"><svg width="40" height="40"><use href="#i-logo"/></svg><span>Label Scanner</span></div>
+    <h1>Know what's in your food.</h1>
+    <p>Scan a barcode or an ingredient list and get clear, personal guidance in seconds.</p>
+    <ul class="vp">
+      <li><svg width="22" height="22"><use href="#i-shield"/></svg><span><b>Allergy protection</b> Warns you when a product contains something you must avoid.</span></li>
+      <li><svg width="22" height="22"><use href="#i-scan"/></svg><span><b>Made for you</b> Advice adapts to your age, pregnancy and health conditions.</span></li>
+      <li><svg width="22" height="22"><use href="#i-lock"/></svg><span><b>Private by design</b> Your details never leave this device.</span></li>
+    </ul>
+  </aside>
+  <div class="onb-form">
+    <h2>Set up your profile</h2>
+    <p class="muted">Takes one minute. You can change everything later in Settings.</p>
+    <div class="grid2">
+      <div><label for="pName">Name</label><input id="pName" autocomplete="off"></div>
+      <div><label for="pAge">Age</label><input id="pAge" type="number" min="1" max="120"></div>
+    </div>
+    <label for="pAllergies">Allergies (separate with commas)</label>
+    <input id="pAllergies" placeholder="e.g. peanut, milk, gluten">
+    <label for="pMode">Mode</label>
+    <select id="pMode">
+      <option value="adult">Adult</option><option value="kids">Child (under 13)</option>
+      <option value="pregnancy">Pregnancy</option><option value="older">Older adult (60+)</option>
+    </select>
+    <fieldset id="conds"><legend>Health conditions (tick any)</legend>
+      <label class="chk"><input type="checkbox" value="diabetes"> Diabetes</label>
+      <label class="chk"><input type="checkbox" value="bp"> High blood pressure</label>
+      <label class="chk"><input type="checkbox" value="heart"> Heart disease or high cholesterol</label>
+      <label class="chk"><input type="checkbox" value="kidney"> Kidney disease</label>
+      <label class="chk"><input type="checkbox" value="weight"> Trying to lose weight</label>
+    </fieldset>
+    <fieldset class="prefs"><legend>Language and look</legend>
+      <div class="grid2 eq"><div><label for="pLang">Language</label><select id="pLang" data-lang-select></select></div><div><label for="pCountry">Country</label><select id="pCountry" data-country-select></select></div></div>
+      <label>Appearance</label><div class="seg" role="group" aria-label="Theme"><button type="button" data-theme-set="auto" aria-pressed="true">Match system</button><button type="button" data-theme-set="light" aria-pressed="false">Light</button><button type="button" data-theme-set="dark" aria-pressed="false">Dark</button></div>
+    </fieldset>
+    <fieldset class="soon"><legend>Contact <span class="pill">Coming soon</span></legend><div class="grid2 eq"><div><label for="pEmail">Email</label><input id="pEmail" type="email" disabled placeholder="Available in a later version"></div><div><label for="pMobile">Mobile number</label><input id="pMobile" type="tel" disabled placeholder="Available in a later version"></div></div><p class="muted small">Accounts, sync and reminders will use these later. Nothing is collected now.</p></fieldset>
+    <label class="chk consent"><input type="checkbox" id="pConsent"> <span>I understand this app gives general guidance, not medical advice, and I will check the printed label if I have allergies. My details are stored only on this device.</span></label>
+    <p id="pError" class="error" role="alert"></p>
+    <div class="row"><button id="pSave" class="primary lg">Save and continue</button><button id="pCancel" class="ghost" hidden>Cancel</button></div>
+  </div>
+</section>
+
+<div id="mainView" class="shell" hidden>
+  <nav class="side" aria-label="Main">
+    <div class="brand"><svg width="36" height="36"><use href="#i-logo"/></svg><span>Label Scanner</span></div>
+    <button class="nav" data-nav="scan" aria-current="page"><svg width="20" height="20"><use href="#i-scan"/></svg>Scan</button>
+    <button class="nav" data-nav="history"><svg width="20" height="20"><use href="#i-hist"/></svg>History</button>
+    <button class="nav" data-nav="settings"><svg width="20" height="20"><use href="#i-set"/></svg>Settings</button>
+    <p class="side-foot">General guidance only. Not medical advice.</p>
+  </nav>
+  <main class="content">
+    <section id="v-scan" class="page">
+      <header class="top"><div><h1 id="hello">Label Scanner</h1><p id="modeTag" class="tag"></p></div></header>
+      <div class="panel hero">
+        <h2>Scan a product</h2>
+        <div class="scan-grid">
+          <div class="scan-box">
+            <h3>Camera or photo</h3>
+            <p class="muted small">Barcodes are read automatically. For ingredients or the nutrition table, capture or upload a photo of them.</p>
+            <div class="cam-wrap" id="camWrap" hidden><video id="video" autoplay playsinline muted></video><div class="cam-frame"></div><p class="cam-hint">Fit the ingredient list inside the frame</p></div>
+            <div class="row">
+              <button id="photoBtn" class="primary">Take photo of ingredients</button><input id="camIn" type="file" accept="image/*" capture="environment" hidden>
+              <button id="camStart">Scan barcode live</button>
+              <button id="camSnap" class="primary" hidden>Read text from camera</button>
+              <button id="camStop" class="ghost" hidden>Close camera</button>
+              <button id="uploadBtn">Upload photo</button>
+              <input id="fileIn" type="file" accept="image/*,.jfif" hidden>
+            </div>
+            <details class="tips"><summary>Tips for a good scan</summary><ul><li>Use bright, even light and avoid glare.</li><li>Hold steady and fill the frame with the ingredient list.</li><li>Flatten curved packs. Photograph one panel at a time.</li><li>Barcodes work best in a photo or camera view with the whole code visible.</li></ul></details>
+          </div>
+          <div class="scan-box">
+            <h3>Barcode number</h3>
+            <div class="row nowrap"><input id="bcText" class="grow" inputmode="numeric" placeholder="e.g. 5000159484695" aria-label="Barcode number"><button id="bcGo" class="primary">Look up</button></div>
+            <p class="muted small">Uses the free Open Food Facts database (needs internet). Looked-up products are saved on this device.</p>
+            <label for="pasteText">Or paste the ingredient text</label>
+            <textarea id="pasteText" rows="3" placeholder="Ingredients: Wheat flour, sugar, palm oil, salt, E211..."></textarea>
+            <div class="row"><button id="analyzeBtn" class="primary">Analyze text</button><button id="clearBtn" class="ghost">Clear</button></div>
+          </div>
+        </div>
+        <p id="status" class="status" role="status"></p>
+      </div>
+      <div id="result"></div>
+      <div id="empty" class="panel empty"><h2>How it works</h2><ol class="steps"><li><b>Scan or upload</b> a barcode or the ingredient list.</li><li><b>Check the text</b> we read and fix any mistakes.</li><li><b>Read your result</b>: score, allergy alerts and advice made for you.</li></ol></div>
+      <p class="safe-note"><svg width="18" height="18"><use href="#i-shield"/></svg><span>Scans can misread text. If you have an allergy, always confirm on the printed label. General guidance only, not medical advice.</span></p>
+    </section>
+
+    <section id="v-history" class="page" hidden>
+      <header class="top"><div><h1>History &amp; favorites</h1><p class="tag">Saved on this device only.</p></div></header>
+      <div class="panel"><div id="lists"></div></div>
+    </section>
+
+    <section id="v-settings" class="page" hidden>
+      <header class="top"><div><h1>Settings</h1><p class="tag">Your profile, appearance and data.</p></div></header>
+      <div class="panel"><h2>Profile</h2><div id="profSummary" class="muted"></div><div class="row"><button id="editProfile">Edit profile</button></div></div>
+      <div class="panel"><h2>Appearance</h2>
+        <div class="seg" role="group" aria-label="Theme"><button data-theme-set="auto" aria-pressed="true">Match system</button><button data-theme-set="light" aria-pressed="false">Light</button><button data-theme-set="dark" aria-pressed="false">Dark</button></div>
+      </div>
+      <div class="panel"><h2>Language &amp; region</h2>
+        <div class="grid2 eq"><div><label for="sLang">Language</label><select id="sLang" data-lang-select></select><p class="muted small">English is available now. More languages are coming.</p></div>
+        <div><label for="sCountry">Country</label><select id="sCountry" data-country-select></select><p class="muted small">Country does not change the language.</p></div></div>
+        <fieldset class="soon"><legend>Contact <span class="pill">Coming soon</span></legend><div class="grid2 eq"><div><label for="sEmail">Email</label><input id="sEmail" type="email" disabled placeholder="Available in a later version"></div><div><label for="sMobile">Mobile number</label><input id="sMobile" type="tel" disabled placeholder="Available in a later version"></div></div><p class="muted small">Accounts, sync and reminders will use these later. Nothing is collected now.</p></fieldset>
+      </div>
+      <div class="panel" id="fbPanel"><h2>Feedback</h2>
+        <p>How satisfied are you with this app?</p>
+        <div class="row stars" id="stars" role="group" aria-label="Satisfaction rating">
+          <button data-rate="1" aria-label="Rate 1 out of 5">★</button><button data-rate="2" aria-label="Rate 2 out of 5">★</button><button data-rate="3" aria-label="Rate 3 out of 5">★</button><button data-rate="4" aria-label="Rate 4 out of 5">★</button><button data-rate="5" aria-label="Rate 5 out of 5">★</button>
+        </div>
+        <div class="row"><button id="fbBtn">Send feedback</button><button id="repBtn">Report a problem</button><button id="fbExport" class="ghost">Export saved feedback</button></div>
+        <div id="fbForm" hidden><label for="fbText" id="fbLabel">Your feedback</label><textarea id="fbText" rows="3"></textarea><button id="fbSend" class="primary">Save</button></div>
+        <p id="fbMsg" class="muted small" role="status"></p>
+      </div>
+      <div class="panel"><h2>Privacy &amp; data</h2>
+        <p class="muted">Your profile, history, favorites and feedback are stored only on this device. Nothing is sent anywhere except barcode lookups to Open Food Facts.</p>
+        <div class="row"><button id="wipeBtn" class="danger">Delete all my data</button></div>
+      </div>
+      <div class="panel"><h2>About</h2>
+        <p class="muted small">Label Scanner 0.8. Product data: Open Food Facts contributors, licensed under the Open Database License (ODbL). Font: Plus Jakarta Sans (SIL OFL). General guidance only, not medical advice. Ask a doctor about food and health conditions.</p>
+      </div>
+    </section>
+  </main>
+</div>
+<canvas id="canvas" hidden></canvas>
+<script src="vendor/tess/tesseract.min.js"></script><script src="vendor/zxing.min.js"></script><script src="lookup-web.js"></script><script src="shim.js"></script><script src="barcode.js"></script><script src="nutrition.js"></script><script src="ingredients.js"></script><script src="engine.js"></script><script src="advice.js"></script><script src="features.js"></script><script src="countries.js"></script><script src="i18n.js"></script>
+<!-- language packs: add one line per language, e.g. <script src="lang/hi.js"></script> -->
+<script src="smartscan.js"></script><script src="ui.js"></script><script src="app.js"></script>
+</body></html>
