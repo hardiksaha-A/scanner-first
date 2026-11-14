@@ -1,0 +1,5 @@
+{
+  "appId": "com.labelscanner.app", "appName": "Label Scanner", "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}
