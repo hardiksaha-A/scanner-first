@@ -1,27 +1,157 @@
-name: Build APK
-on: { push: { branches: [main, master] }, workflow_dispatch: {} }
+name: Build NutriShield APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       DEBUG_KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
     steps:
       - uses: actions/checkout@v4
+
+      # Finds the app (label-scanner-upload.zip, or an unzipped folder) and copies it to a clean folder: _app
+      # NOTE: this workflow never replaces files inside the app. What is in the zip is exactly what gets built.
+      - name: Locate the app
+        shell: bash
+        run: |
+          set -eo pipefail
+          echo "Files in the repository:"; ls -la
+          rm -rf _unzipped _app
+          find_app() {  # prints the shallowest folder under $1 that holds the complete app
+            local f d best="" bl=999999
+            [ -d "$1" ] || return 0
+            while IFS= read -r -d '' f; do
+              d="$(dirname "$f")"
+              if [ -f "$d/package.json" ] && [ -f "$d/www/index.html" ] && [ "${#d}" -lt "$bl" ]; then best="$d"; bl="${#d}"; fi
+            done < <(find "$1" -name capacitor.config.json -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/android/*' -print0)
+            printf '%s' "$best"
+          }
+          unzip_to() { unzip -oq "$1" -d "$2" || { rc=$?; [ "$rc" -le 1 ] || exit "$rc"; }; }  # exit code 1 = harmless warning
+          APP=""
+          ZIP="$(find . -maxdepth 3 -name 'nutrishield-app.zip' -not -path './.git/*' | sed -n '1p')"
+          if [ -z "$ZIP" ]; then ZIP="$(find . -maxdepth 3 -name 'label-scanner-upload.zip' -not -path './.git/*' | sed -n '1p')"; fi  # older name
+          if [ -n "$ZIP" ]; then echo "Using $ZIP"; mkdir -p _unzipped; unzip_to "$ZIP" _unzipped; APP="$(find_app _unzipped)"; fi
+          if [ -z "$APP" ]; then APP="$(find_app .)"; fi
+          if [ -z "$APP" ]; then
+            while IFS= read -r z; do echo "Unzipping $z"; mkdir -p "_unzipped/$(basename "$z" .zip)"; unzip_to "$z" "_unzipped/$(basename "$z" .zip)"; done < <(find . -maxdepth 3 -name '*.zip' -not -path './.git/*' -not -path './_unzipped/*')
+            APP="$(find_app _unzipped)"
+          fi
+          if [ -z "$APP" ]; then echo "::error::App not found. Upload nutrishield-app.zip (without unzipping) to the repository."; exit 1; fi
+          echo "Using app folder: $APP"
+          cp -a "$APP" _app
+          rm -rf _app/node_modules _app/android _app/www/vendor/tess _unzipped
+          echo "APP_DIR=$GITHUB_WORKSPACE/_app" >> "$GITHUB_ENV"
+
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with:
+          node-version: 20
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
+        with:
+          distribution: temurin
+          java-version: 17
+
       - name: Install dependencies
-        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
-      - run: node scripts/prep.js
-      - run: npx cap add android
-      - name: Add camera permission
-        run: sed -i 's#</manifest>#<uses-permission android:name="android.permission.CAMERA" /><uses-feature android:name="android.hardware.camera" android:required="false" /></manifest>#' android/app/src/main/AndroidManifest.xml
-      - run: npx cap sync android
-      # Optional: a fixed signing key lets each new APK install OVER the old one (keeps your data).
+        shell: bash
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -eo pipefail
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+
+      - name: Prepare OCR engine and check the app files
+        shell: bash
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -eo pipefail
+          node scripts/prep.js
+          node scripts/verify.js
+
+      - name: Create Android project, then apply icons, launch splash and camera permission
+        shell: bash
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -eo pipefail
+          rm -rf android
+          npx cap add android
+          RES=android/app/src/main/res
+          # Launcher icons: replace the template's PNGs (same file names, so no XML changes are needed)
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            [ -d "$RES/mipmap-$d" ] || { echo "::error::Android template has no $RES/mipmap-$d"; exit 1; }
+            for n in ic_launcher ic_launcher_round ic_launcher_foreground; do
+              cp -f "android-icons/mipmap-$d/$n.png" "$RES/mipmap-$d/$n.png"
+            done
+          done
+          # Branded native launch splash (same file names and sizes as the template's)
+          COUNT=0
+          for dir in android-icons/splash/*/; do
+            n="$(basename "$dir")"
+            if [ -f "$RES/$n/splash.png" ]; then cp -f "$dir/splash.png" "$RES/$n/splash.png"; COUNT=$((COUNT+1)); fi
+          done
+          echo "Replaced $COUNT splash images"
+          # Camera permission (needed for the live camera and "Take Photo"); camera stays optional for installation
+          M=android/app/src/main/AndroidManifest.xml
+          if ! grep -q 'android.permission.CAMERA' "$M"; then
+            sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#&\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />#' "$M"
+          fi
+          grep -q 'android.permission.CAMERA' "$M" || { echo "::error::Could not add the camera permission"; exit 1; }
+          python3 -c "import sys, xml.dom.minidom as m; m.parse(sys.argv[1]); print('AndroidManifest.xml is well-formed')" "$M"
+          npx cap sync android
+
       - name: Restore fixed debug signing key
         if: env.DEBUG_KEYSTORE_B64 != ''
+        shell: bash
         run: mkdir -p ~/.android && echo "$DEBUG_KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
-      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+
+      - name: Build APK
+        id: build
+        continue-on-error: true
+        working-directory: ${{ env.APP_DIR }}
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+
+      - name: Retry without voice plugin
+        if: steps.build.outcome == 'failure'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          npm uninstall @capacitor-community/text-to-speech
+          npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+
+      - name: Verify the APK contains the logo and the OCR engine
+        shell: bash
+        run: |
+          set -eo pipefail
+          APK="$APP_DIR/android/app/build/outputs/apk/debug/app-debug.apk"
+          [ -f "$APK" ] || { echo "::error::APK was not produced"; exit 1; }
+          LIST="$(unzip -l "$APK")"
+          for f in assets/public/index.html assets/public/logo.png assets/public/shim.js assets/public/smartscan.js \
+                   assets/public/vendor/tess/tesseract.min.js assets/public/vendor/tess/worker.min.js \
+                   assets/public/vendor/tess/core/tesseract-core-lstm.wasm.js assets/public/vendor/tess/core/tesseract-core-simd-lstm.wasm.js \
+                   assets/public/vendor/tess/lang/eng.traineddata.gz; do
+            grep -qF "$f" <<<"$LIST" || { echo "::error::APK is missing $f"; exit 1; }
+          done
+          echo "APK OK: $(du -h "$APK" | cut -f1)"
+
       - uses: actions/upload-artifact@v4
-        with: { name: LabelScanner-APK, path: android/app/build/outputs/apk/debug/app-debug.apk }
+        with:
+          name: NutriShield-APK
+          path: "${{ env.APP_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk"
+
+      - name: Update Permanent APK Link
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp -f "${{ env.APP_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk" NutriShield.apk
+          gh release upload latest NutriShield.apk --clobber || gh release create latest NutriShield.apk --title "NutriShield" --notes "Latest NutriShield APK"
+          gh release edit latest --title "NutriShield" --notes "Download the latest NutriShield APK below." || true
